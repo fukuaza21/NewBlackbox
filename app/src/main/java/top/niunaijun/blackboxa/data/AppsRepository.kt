@@ -7,8 +7,10 @@ import android.webkit.URLUtil
 import androidx.lifecycle.MutableLiveData
 import java.io.File
 import top.niunaijun.blackbox.BlackBoxCore
+import top.niunaijun.blackbox.core.env.BEnvironment
 import top.niunaijun.blackbox.utils.AbiUtils
 import top.niunaijun.blackboxa.R
+import top.niunaijun.blackboxa.app.App
 import top.niunaijun.blackboxa.app.AppManager
 import top.niunaijun.blackboxa.bean.AppInfo
 import top.niunaijun.blackboxa.bean.InstalledAppBean
@@ -19,6 +21,10 @@ import top.niunaijun.blackboxa.util.getString
 class AppsRepository {
     val TAG: String = "AppsRepository"
     private var mInstalledList = mutableListOf<AppInfo>()
+
+    companion object {
+        private const val DISABLED_SUFFIX = ".disabled"
+    }
 
     
     private fun safeLoadAppLabel(applicationInfo: ApplicationInfo): String {
@@ -444,7 +450,121 @@ class AppsRepository {
         }
     }
 
-    
+    // ---- Native library injection ----
+
+    /** name -> enabled */
+    fun listInjectLibs(packageName: String): List<Pair<String, Boolean>> {
+        return try {
+            val dir = BEnvironment.getInjectLibDir(packageName)
+            if (!dir.isDirectory) return emptyList()
+            dir.listFiles { f -> f.isFile && f.name.endsWith(".so") }
+                    ?.sortedBy { it.name }
+                    ?.map { it.name to !File(it.absolutePath + DISABLED_SUFFIX).exists() }
+                    ?: emptyList()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error listing inject libs: ${e.message}")
+            emptyList()
+        }
+    }
+
+    fun copyInjectLibs(
+            packageName: String,
+            uris: List<Uri>,
+            resultLiveData: MutableLiveData<String>
+    ) {
+        try {
+            val dir = BEnvironment.getInjectLibDir(packageName)
+            dir.mkdirs()
+            var copied = 0
+            for (uri in uris) {
+                try {
+                    val name = queryDisplayName(uri)
+                    if (name == null || !name.endsWith(".so")) {
+                        resultLiveData.postValue(
+                                getString(R.string.inject_not_so, name ?: uri.lastPathSegment))
+                        continue
+                    }
+                    val bytes = App.getContext().contentResolver.openInputStream(uri)?.use {
+                        it.readBytes()
+                    } ?: continue
+                    if (!isMatchingAbi(bytes)) {
+                        resultLiveData.postValue(getString(R.string.inject_abi_mismatch, name))
+                        continue
+                    }
+                    File(dir, name).writeBytes(bytes)
+                    copied++
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error copying inject lib $uri: ${e.message}")
+                }
+            }
+            resultLiveData.postValue(
+                    if (copied > 0) getString(R.string.inject_success)
+                    else getString(R.string.inject_fail)
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in copyInjectLibs: ${e.message}")
+            resultLiveData.postValue(getString(R.string.inject_fail))
+        }
+    }
+
+    fun setInjectLibEnabled(
+            packageName: String,
+            libName: String,
+            enabled: Boolean,
+            resultLiveData: MutableLiveData<String>
+    ) {
+        try {
+            val marker = File(BEnvironment.getInjectLibDir(packageName), libName + DISABLED_SUFFIX)
+            val ok = if (enabled) {
+                !marker.exists() || marker.delete()
+            } else {
+                marker.createNewFile()
+            }
+            resultLiveData.postValue(if (ok) "" else getString(R.string.inject_fail))
+        } catch (e: Exception) {
+            Log.e(TAG, "Error toggling inject lib: ${e.message}")
+            resultLiveData.postValue(getString(R.string.inject_fail))
+        }
+    }
+
+    fun deleteInjectLib(
+            packageName: String,
+            libName: String,
+            resultLiveData: MutableLiveData<String>
+    ) {
+        try {
+            val dir = BEnvironment.getInjectLibDir(packageName)
+            File(dir, libName).delete()
+            File(dir, libName + DISABLED_SUFFIX).delete()
+            resultLiveData.postValue("")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting inject lib: ${e.message}")
+            resultLiveData.postValue(getString(R.string.inject_fail))
+        }
+    }
+
+    private fun queryDisplayName(uri: Uri): String? {
+        return try {
+            App.getContext().contentResolver.query(uri, null, null, null, null)?.use { c ->
+                val idx = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                if (c.moveToFirst() && idx >= 0) c.getString(idx) else null
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not resolve display name for $uri: ${e.message}")
+            null
+        }
+    }
+
+    /** ELF e_ident[EI_CLASS] (offset 4): 1 = 32-bit, 2 = 64-bit. */
+    private fun isMatchingAbi(bytes: ByteArray): Boolean {
+        if (bytes.size < 5) return false
+        if (bytes[0] != 0x7F.toByte() || bytes[1] != 'E'.code.toByte()
+                || bytes[2] != 'L'.code.toByte() || bytes[3] != 'F'.code.toByte()) return false
+        val elf64 = bytes[4].toInt() == 2
+        return elf64 == BlackBoxCore.is64Bit()
+    }
+
+
     private fun scanUser() {
         try {
             val blackBoxCore = BlackBoxCore.get()

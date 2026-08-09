@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
@@ -17,6 +18,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import cbfg.rvadapter.RVAdapter
 import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.list.listItems
 import top.niunaijun.blackbox.BlackBoxCore
 import top.niunaijun.blackboxa.R
 import top.niunaijun.blackboxa.bean.AppInfo
@@ -44,6 +46,20 @@ class AppsFragment : Fragment() {
     private val viewBinding: FragmentAppsBinding by inflate()
 
     private var popupMenu: PopupMenu? = null
+
+    private var injectTarget: AppInfo? = null
+
+    private val injectLibPicker =
+            registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+                try {
+                    val target = injectTarget
+                    if (target != null && !uris.isNullOrEmpty()) {
+                        viewModel.copyInjectLibs(target.packageName, uris)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error in inject lib picker result: ${e.message}")
+                }
+            }
 
     companion object {
         private const val TAG = "AppsFragment"
@@ -359,6 +375,10 @@ class AppsFragment : Fragment() {
                                     R.id.app_shortcut -> {
                                         ShortcutUtil.createShortcut(requireContext(), userID, data)
                                     }
+
+                                    R.id.app_inject -> {
+                                        showInjectDialog(data)
+                                    }
                                 }
                                 return@setOnMenuItemClickListener true
                             } catch (e: Exception) {
@@ -467,7 +487,83 @@ class AppsFragment : Fragment() {
         }
     }
 
-    
+    private fun showInjectDialog(info: AppInfo) {
+        try {
+            val libs = viewModel.listInjectLibsBlocking(info.packageName)
+            val items = mutableListOf(getString(R.string.inject_add))
+            items.addAll(libs.map { (name, enabled) ->
+                if (enabled) name else "$name (" + getString(R.string.inject_disable) + ")"
+            })
+            if (libs.isEmpty()) {
+                items.add(getString(R.string.inject_empty))
+            }
+
+            MaterialDialog(requireContext()).show {
+                title(R.string.app_inject)
+                message(text = getString(R.string.app_inject_hint, info.name))
+                listItems(items = items) { _, index, _ ->
+                    try {
+                        when {
+                            index == 0 -> {
+                                injectTarget = info
+                                injectLibPicker.launch(arrayOf("*/*"))
+                            }
+                            libs.isNotEmpty() -> {
+                                val (libName, enabled) = libs[index - 1]
+                                showInjectLibActionDialog(info, libName, enabled)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error handling inject dialog item: ${e.message}")
+                    }
+                }
+                negativeButton(R.string.cancel)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error showing inject dialog: ${e.message}")
+        }
+    }
+
+    private fun showInjectLibActionDialog(info: AppInfo, libName: String, enabled: Boolean) {
+        try {
+            val toggleLabel =
+                    if (enabled) getString(R.string.inject_disable) else getString(R.string.inject_enable)
+            MaterialDialog(requireContext()).show {
+                title(text = libName)
+                listItems(items = listOf(toggleLabel, getString(R.string.inject_delete))) { _, index, _ ->
+                    try {
+                        when (index) {
+                            0 -> {
+                                viewModel.setInjectLibEnabled(info.packageName, libName, !enabled)
+                                toast(libName)
+                            }
+                            1 -> {
+                                MaterialDialog(requireContext()).show {
+                                    title(R.string.inject_delete)
+                                    message(text = getString(R.string.inject_delete_hint, libName))
+                                    positiveButton(R.string.done) {
+                                        try {
+                                            viewModel.deleteInjectLib(info.packageName, libName)
+                                        } catch (e: Exception) {
+                                            Log.e(TAG, "Error deleting inject lib: ${e.message}")
+                                        }
+                                    }
+                                    negativeButton(R.string.cancel)
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error handling inject lib action: ${e.message}")
+                    }
+                }
+                negativeButton(R.string.cancel)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error showing inject lib action dialog: ${e.message}")
+        }
+    }
+
+
     private fun stopApk(info: AppInfo) {
         try {
             MaterialDialog(requireContext()).show {

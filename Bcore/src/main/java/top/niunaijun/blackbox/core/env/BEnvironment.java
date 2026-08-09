@@ -143,6 +143,10 @@ public class BEnvironment {
         return new File(getAppDir(packageName), "lib");
     }
 
+    public static File getInjectLibDir(String packageName) {
+        return new File(getAppDir(packageName), "inject_libs");
+    }
+
     public static File getXSharedPreferences(String packageName, String prefFileName) {
        return new File(BEnvironment.getDataDir(packageName, BlackBoxCore.getUserId()), "shared_prefs/" + prefFileName + ".xml");
     }
