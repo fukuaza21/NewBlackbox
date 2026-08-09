@@ -481,7 +481,7 @@ class AppsRepository {
                     val name = queryDisplayName(uri)
                     if (name == null || !name.endsWith(".so")) {
                         resultLiveData.postValue(
-                                getString(R.string.inject_not_so, name ?: uri.lastPathSegment))
+                                getString(R.string.inject_not_so, name ?: uri.lastPathSegment ?: "unknown"))
                         continue
                     }
                     val bytes = App.getContext().contentResolver.openInputStream(uri)?.use {
