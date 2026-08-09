@@ -22,10 +22,6 @@ class AppsRepository {
     val TAG: String = "AppsRepository"
     private var mInstalledList = mutableListOf<AppInfo>()
 
-    companion object {
-        private const val DISABLED_SUFFIX = ".disabled"
-    }
-
     
     private fun safeLoadAppLabel(applicationInfo: ApplicationInfo): String {
         return try {
@@ -451,21 +447,8 @@ class AppsRepository {
     }
 
     // ---- Native library injection ----
-
-    /** name -> enabled */
-    fun listInjectLibs(packageName: String): List<Pair<String, Boolean>> {
-        return try {
-            val dir = BEnvironment.getInjectLibDir(packageName)
-            if (!dir.isDirectory) return emptyList()
-            dir.listFiles { f -> f.isFile && f.name.endsWith(".so") }
-                    ?.sortedBy { it.name }
-                    ?.map { it.name to !File(it.absolutePath + DISABLED_SUFFIX).exists() }
-                    ?: emptyList()
-        } catch (e: Exception) {
-            Log.e(TAG, "Error listing inject libs: ${e.message}")
-            emptyList()
-        }
-    }
+    // Single-slot model: one lib per app; a new pick replaces the old one
+    // regardless of filename.
 
     fun copyInjectLibs(
             packageName: String,
@@ -491,6 +474,7 @@ class AppsRepository {
                         resultLiveData.postValue(getString(R.string.inject_abi_mismatch, name))
                         continue
                     }
+                    dir.listFiles()?.forEach { it.delete() }
                     File(dir, name).writeBytes(bytes)
                     copied++
                 } catch (e: Exception) {
@@ -503,42 +487,6 @@ class AppsRepository {
             )
         } catch (e: Exception) {
             Log.e(TAG, "Error in copyInjectLibs: ${e.message}")
-            resultLiveData.postValue(getString(R.string.inject_fail))
-        }
-    }
-
-    fun setInjectLibEnabled(
-            packageName: String,
-            libName: String,
-            enabled: Boolean,
-            resultLiveData: MutableLiveData<String>
-    ) {
-        try {
-            val marker = File(BEnvironment.getInjectLibDir(packageName), libName + DISABLED_SUFFIX)
-            val ok = if (enabled) {
-                !marker.exists() || marker.delete()
-            } else {
-                marker.createNewFile()
-            }
-            resultLiveData.postValue(if (ok) "" else getString(R.string.inject_fail))
-        } catch (e: Exception) {
-            Log.e(TAG, "Error toggling inject lib: ${e.message}")
-            resultLiveData.postValue(getString(R.string.inject_fail))
-        }
-    }
-
-    fun deleteInjectLib(
-            packageName: String,
-            libName: String,
-            resultLiveData: MutableLiveData<String>
-    ) {
-        try {
-            val dir = BEnvironment.getInjectLibDir(packageName)
-            File(dir, libName).delete()
-            File(dir, libName + DISABLED_SUFFIX).delete()
-            resultLiveData.postValue("")
-        } catch (e: Exception) {
-            Log.e(TAG, "Error deleting inject lib: ${e.message}")
             resultLiveData.postValue(getString(R.string.inject_fail))
         }
     }

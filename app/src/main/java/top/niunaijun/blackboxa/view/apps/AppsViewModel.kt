@@ -81,30 +81,9 @@ class AppsViewModel(private val repo: AppsRepository) : BaseViewModel() {
 
     // ---- Native library injection ----
 
-    fun listInjectLibsBlocking(packageName: String): List<Pair<String, Boolean>> {
-        return try {
-            repo.listInjectLibs(packageName)
-        } catch (e: Exception) {
-            Log.e("AppsViewModel", "Error listing inject libs: ${e.message}")
-            emptyList()
-        }
-    }
-
     fun copyInjectLibs(packageName: String, uris: List<android.net.Uri>) {
         launchOnUI {
             repo.copyInjectLibs(packageName, uris, resultLiveData)
-        }
-    }
-
-    fun setInjectLibEnabled(packageName: String, libName: String, enabled: Boolean) {
-        launchOnUI {
-            repo.setInjectLibEnabled(packageName, libName, enabled, resultLiveData)
-        }
-    }
-
-    fun deleteInjectLib(packageName: String, libName: String) {
-        launchOnUI {
-            repo.deleteInjectLib(packageName, libName, resultLiveData)
         }
     }
 }

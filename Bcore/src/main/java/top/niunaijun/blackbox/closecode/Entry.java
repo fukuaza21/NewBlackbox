@@ -12,15 +12,14 @@ import top.niunaijun.blackbox.utils.Slog;
 /**
  * Per-app native library injection.
  *
- * Libraries dropped into BEnvironment.getInjectLibDir(pkg) are System.load()'d
+ * The .so dropped into BEnvironment.getInjectLibDir(pkg) is System.load()'d
  * inside the virtual app's process from beforeCreateApplication — i.e. before
  * the virtual app's Application class is instantiated (BActivityThread
- * .handleBindApplication). A sibling "<name>.disabled" marker file skips a lib.
- * Each load is individually guarded: one broken lib must never abort a launch.
+ * .handleBindApplication). One slot per app: the UI replaces the file on each
+ * pick. Each load is guarded: a broken lib must never abort a launch.
  */
 public class Entry {
     private static final String TAG = "Lib Injection";
-    private static final String DISABLED_SUFFIX = ".disabled";
 
     public static void attach() {
         BlackBoxCore.get().addAppLifecycleCallback(new AppLifecycleCallback() {
@@ -41,10 +40,6 @@ public class Entry {
                     return;
                 }
                 for (File lib : libs) {
-                    if (new File(lib.getAbsolutePath() + DISABLED_SUFFIX).exists()) {
-                        Slog.d(TAG, "Skipping disabled lib: " + lib.getName() + " for " + packageName);
-                        continue;
-                    }
                     try {
                         System.load(lib.getAbsolutePath());
                         Slog.d(TAG, "Injected native lib before Application created: "

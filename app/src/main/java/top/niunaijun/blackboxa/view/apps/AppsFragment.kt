@@ -18,7 +18,6 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import cbfg.rvadapter.RVAdapter
 import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.list.listItems
 import top.niunaijun.blackbox.BlackBoxCore
 import top.niunaijun.blackboxa.R
 import top.niunaijun.blackboxa.bean.AppInfo
@@ -489,77 +488,10 @@ class AppsFragment : Fragment() {
 
     private fun showInjectDialog(info: AppInfo) {
         try {
-            val libs = viewModel.listInjectLibsBlocking(info.packageName)
-            val items = mutableListOf(getString(R.string.inject_add))
-            items.addAll(libs.map { (name, enabled) ->
-                if (enabled) name else "$name (" + getString(R.string.inject_disable) + ")"
-            })
-            if (libs.isEmpty()) {
-                items.add(getString(R.string.inject_empty))
-            }
-
-            MaterialDialog(requireContext()).show {
-                title(R.string.app_inject)
-                message(text = getString(R.string.app_inject_hint, info.name))
-                listItems(items = items) { _, index, _ ->
-                    try {
-                        when {
-                            index == 0 -> {
-                                injectTarget = info
-                                injectLibPicker.launch(arrayOf("*/*"))
-                            }
-                            libs.isNotEmpty() -> {
-                                val (libName, enabled) = libs[index - 1]
-                                showInjectLibActionDialog(info, libName, enabled)
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error handling inject dialog item: ${e.message}")
-                    }
-                }
-                negativeButton(R.string.cancel)
-            }
+            injectTarget = info
+            injectLibPicker.launch(arrayOf("*/*"))
         } catch (e: Exception) {
-            Log.e(TAG, "Error showing inject dialog: ${e.message}")
-        }
-    }
-
-    private fun showInjectLibActionDialog(info: AppInfo, libName: String, enabled: Boolean) {
-        try {
-            val toggleLabel =
-                    if (enabled) getString(R.string.inject_disable) else getString(R.string.inject_enable)
-            MaterialDialog(requireContext()).show {
-                title(text = libName)
-                listItems(items = listOf(toggleLabel, getString(R.string.inject_delete))) { _, index, _ ->
-                    try {
-                        when (index) {
-                            0 -> {
-                                viewModel.setInjectLibEnabled(info.packageName, libName, !enabled)
-                                toast(libName)
-                            }
-                            1 -> {
-                                MaterialDialog(requireContext()).show {
-                                    title(R.string.inject_delete)
-                                    message(text = getString(R.string.inject_delete_hint, libName))
-                                    positiveButton(R.string.done) {
-                                        try {
-                                            viewModel.deleteInjectLib(info.packageName, libName)
-                                        } catch (e: Exception) {
-                                            Log.e(TAG, "Error deleting inject lib: ${e.message}")
-                                        }
-                                    }
-                                    negativeButton(R.string.cancel)
-                                }
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error handling inject lib action: ${e.message}")
-                    }
-                }
-                negativeButton(R.string.cancel)
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error showing inject lib action dialog: ${e.message}")
+            Log.e(TAG, "Error launching inject lib picker: ${e.message}")
         }
     }
 
