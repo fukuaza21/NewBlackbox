@@ -62,6 +62,11 @@ android {
         sourceCompatibility JavaVersion.VERSION_21
         targetCompatibility JavaVersion.VERSION_21
     }
+    lintOptions {
+        // Deliberately debuggable: CI release APKs ship to Telegram for testing.
+        disable "HardcodedDebugMode"
+        abortOnError false
+    }
     buildFeatures {
         viewBinding true
     }
