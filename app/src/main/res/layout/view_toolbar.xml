@@ -5,10 +5,12 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@drawable/bg_gradient_toolbar"
+        android:elevation="4dp"
         android:theme="@style/ToolBarColorStyle"
-        android:background="@color/primary"
         app:title="@string/app_name"
-        app:subtitleTextColor="@color/white"
+        app:titleTextAppearance="@style/TextAppearance.BlackBox.ToolbarTitle"
+        app:subtitleTextColor="#DCDCF0"
         app:titleTextColor="@color/white">
 
 </com.google.android.material.appbar.MaterialToolbar>

@@ -15,19 +15,16 @@
                 android:id="@+id/toolbar_layout"
                 layout="@layout/view_toolbar"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:layout_constraintTop_toTopOf="parent" />
+                android:layout_height="wrap_content" />
 
         <com.ferfalk.simplesearchview.SimpleSearchView
                 android:id="@+id/searchView"
                 app:type="card"
-
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@color/primary" />
+                android:background="@color/surface" />
 
     </FrameLayout>
-
 
     <com.github.nukc.stateview.StateView
             android:id="@+id/stateView"
@@ -38,7 +35,11 @@
             android:id="@+id/recyclerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            app:layout_constraintTop_toBottomOf="@id/toolbar" />
-
+            android:clipToPadding="false"
+            android:paddingStart="12dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="12dp"
+            android:scrollbars="none" />
 
 </LinearLayout>

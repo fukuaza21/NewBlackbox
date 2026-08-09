@@ -1,10 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#3F3F3F</color>
-    <color name="primary_dark">#3F3F3F</color>
-    <color name="primary_light">#3F3F3F</color>
-    <color name="accent">#ffffff</color>
-    <color name="primary_text">#212121</color>
-    <color name="secondary_text">#757575</color>
+    <!-- Brand gradient stops -->
+    <color name="gradient_start">#6D28D9</color>
+    <color name="gradient_mid">#4F46E5</color>
+    <color name="gradient_end">#2563EB</color>
+
+    <!-- Legacy aliases kept for code references (LoadingActivity uses R.color.primary) -->
+    <color name="primary">#4F46E5</color>
+    <color name="primary_dark">#3730A3</color>
+    <color name="primary_light">#818CF8</color>
+    <color name="accent">#8B5CF6</color>
+
+    <!-- Dark surfaces -->
+    <color name="bg">#0F0F1A</color>
+    <color name="surface">#1A1A2E</color>
+    <color name="surface_variant">#24243E</color>
+    <color name="surface_elevated">#2A2A4A</color>
+
+    <!-- Text -->
+    <color name="primary_text">#F1F1F7</color>
+    <color name="secondary_text">#9CA3C7</color>
+    <color name="text_on_accent">#FFFFFFFF</color>
+
+    <!-- Accents / states -->
+    <color name="success">#34D399</color>
+    <color name="warn">#FBBF24</color>
+    <color name="error">#F87171</color>
+    <color name="ripple_light">#22FFFFFF</color>
+
     <color name="white">#FFFFFFFF</color>
+    <color name="black">#FF000000</color>
+    <color name="transparent">#00000000</color>
 </resources>

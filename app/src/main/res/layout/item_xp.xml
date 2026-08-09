@@ -3,15 +3,17 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="8dp">
+        android:layout_marginHorizontal="4dp"
+        android:layout_marginVertical="5dp"
+        android:background="@drawable/bg_card_ripple"
+        android:padding="12dp">
 
     <ImageView
             android:id="@+id/icon"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            app:layout_constraintEnd_toStartOf="@id/text_layout"
+            android:background="@drawable/bg_icon_circle"
+            android:padding="3dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -19,6 +21,7 @@
             android:id="@+id/text_layout"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="14dp"
             android:orientation="vertical"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@id/enable"
@@ -30,8 +33,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
                 android:text="@string/app_name"
-                android:textColor="@color/primary_text"
+                android:textAppearance="@style/TextAppearance.BlackBox.ItemTitle"
                 android:textSize="16sp" />
 
         <TextView
@@ -39,9 +44,10 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="2"
                 android:text="@string/app_name"
-                android:textColor="@color/secondary_text" />
-
+                android:textAppearance="@style/TextAppearance.BlackBox.ItemSubtitle" />
 
     </LinearLayout>
 
@@ -49,8 +55,8 @@
             android:id="@+id/enable"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/text_layout"
             app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

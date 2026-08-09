@@ -16,7 +16,9 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/ic_location_change"
+            android:contentDescription="@string/fake_location"
             app:layout_constraintEnd_toEndOf="@id/rocker"
             app:layout_constraintStart_toStartOf="@id/rocker"
             app:layout_constraintTop_toBottomOf="@id/rocker" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
