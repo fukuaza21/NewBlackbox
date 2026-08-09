@@ -47,10 +47,15 @@ android {
     }
 
     buildTypes {
+        debug {
+            manifestPlaceholders = [appDebuggable: "true"]
+        }
         release {
             signingConfig signingConfigs.release
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            // Deliberately debuggable: CI release APKs ship to Telegram for testing.
+            manifestPlaceholders = [appDebuggable: "true"]
         }
     }
     compileOptions {
